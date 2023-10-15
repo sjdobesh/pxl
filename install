@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+var libname='pxl'
+echo "compiling library..."
+make lib
+echo "copying shared library lib$libname.so to /usr/local/lib..."
+sudo cp lib/lib"$libname".so /usr/local/lib
+echo "copying header "$libname".h to /usr/local/include..."
+sudo cp src/"$libname".h /usr/local/include
+echo "cleaning..."
+make clean
+echo "done"
