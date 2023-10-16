@@ -46,13 +46,16 @@ pthread_barrier_t thread_barrier;
  * @param params thread parameter struct
  * @return void*, works via ptr reference
  */
-void* pngz_filter_threadfn(void* params) {
+void* pxl_filter_threadfn(void* params) {
   /* read in params */
-  struct thread_parameters* tp = (thread_parameters*) params;
+  pxl_thread_parameters* tp = (pxl_thread_parameters*) params;
   /* apply the filter here for subsection of rows */
   for (unsigned i = tp->row_start; i < tp->row_stop; i++) {
     for (unsigned j = 0; j < tp->i_image->width; j++) {
-      tp->o_buf[i][j] = tp->filter_function(tp->i_image->pixels[i][j]);
+      if (tp->f_type == PIXEL)
+      tp->o_buf[i][j] = tp->filter_function_pixel(tp->i_image->pixels[i][j]);
+      else
+      tp->o_buf[i][j] = tp->filter_function_image(tp->i_image, i, j);
     }
   }
   /* halt threads */
@@ -74,7 +77,7 @@ int pxl_filter_threaded(pngz* z, pixel (*filter)(pixel), unsigned thread_count) 
 
   /* thread containers and barrier */
   pthread_t* threads = malloc(sizeof(pthread_t) * thread_count);
-  thread_parameters* tps = malloc(sizeof(thread_parameters) * thread_count);
+  pxl_thread_parameters* tps = malloc(sizeof(pxl_thread_parameters) * thread_count);
 
   /* set barrier */
   pthread_barrier_init(&thread_barrier, NULL, thread_count);
@@ -85,15 +88,15 @@ int pxl_filter_threaded(pngz* z, pixel (*filter)(pixel), unsigned thread_count) 
   /* launch threads */
   for (unsigned i = 0; i < thread_count; i++) {
     /* initialize thread params here */
-    tps[i] = (thread_parameters) {
+    tps[i] = (pxl_thread_parameters) {
       .i_image = z,
       .o_buf = output,
-      .filter_function = filter,
+      .filter_function_pixel = filter,
       .row_start = i * divisions,
       .row_stop = (i + 1) * divisions > z->height ? z->height : (i+1) * divisions,
       .thread_id = i
     };
-    if (pthread_create(&threads[i], NULL, pngz_filter_threadfn, (void*)&tps[i])) {
+    if (pthread_create(&threads[i], NULL, pxl_filter_threadfn, (void*)&tps[i])) {
       fprintf(stderr, "[ERROR] unable to create thread %d\n", i);
     }
   }
@@ -113,10 +116,7 @@ int pxl_filter_threaded(pngz* z, pixel (*filter)(pixel), unsigned thread_count) 
 }
 
 /* resize an image */
-int pngz_resize(pngz* z, unsigned rows, unsigned cols, resize_function rf) {
-  /* determine if scaling up or down */
-  /* determine algorithm to use */
-  /* can we multi thread this process? (yes) */
-  return 0;
-}
+//int pxl_resize(pngz* z, unsigned rows, unsigned cols, resize_function rf) {
+//   return 0;
+// }
 

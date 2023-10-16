@@ -1,6 +1,5 @@
 /* pxl.h
  * samantha jane
- * simple png
  *--------------------------------------------------------------------------80*/
 
 #ifndef _PXL_H_
@@ -28,10 +27,11 @@ typedef struct pxl_thread_parameters {
   filter_type f_type;
   union {
     pixel (*filter_function_pixel) (pixel);
-    pixel (*filter_function_image) (pngz, unsigned, unsigned);
+    pixel (*filter_function_image) (pngz*, unsigned, unsigned);
+  };
   unsigned long row_start, row_stop;
   int thread_id;
-} thread_parameters;
+} pxl_thread_parameters;
 
 /* prototypes */
 /* filter functions */
@@ -43,8 +43,8 @@ int pxl_filter_threaded(pngz* z, pixel(*filter)(pixel), unsigned thread_count);
 int pxl_filter(pngz* z, pixel(*filter)(pixel));
 
 void* pxl_convolution_threadfn(void* params);
-int pxl_convolution_threaded(pngz* s, pixel(*convolution)(spng s, unsigned row, unsigned col, unsigned thread_count);
-int pxl_convolution(pngz* z, pixel(*convolution)(pngz z, unsigned row, unsigned col);
+int pxl_convolution_threaded(pngz* z, pixel(*convolution)(pngz z, unsigned row, unsigned col, unsigned thread_count));
+int pxl_convolution(pngz* z, pixel(*convolution)(pngz z, unsigned row, unsigned col));
 
 /* resizing functions */
 // void* pxl_resize_threadfn(void* params);

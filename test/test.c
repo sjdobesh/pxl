@@ -1,4 +1,4 @@
-#include "../src/pxl.h";
+#include "../src/pxl.h"
 int main() {
 
 }
