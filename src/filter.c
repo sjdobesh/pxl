@@ -1,4 +1,5 @@
-/* pxl.c
+/* filter.c
+ * filter module for pxl library
  * samantha jane
  *--------------------------------------------------------------------------80*/
 
@@ -7,35 +8,58 @@
 #include <stdio.h>
 #include <errno.h>
 #include "pngz.h"
-#include "pxl.h"
+#include "filter.h"
+
 
 
 /**
- * pixel filter.
- * maps a function onto every pixel.
+ * casts f to void and passes in the addition filter type.
+ * this allows pxl_filter_single to accept both function types.
+ * acts as intermediary between pxl_filter macro and the
+ * pxl_filter_single function.
+ */
+int pxl_filter_single_pixel(pngz* z, pixel_filter_func f) {
+  return pxl_filter_single(z, *(void**)&f, PIXEL);
+}
+
+/**
+ * casts f to void and passes in the addition filter type.
+ * this allows pxl_filter_single to accept both function types.
+ * acts as intermediary between pxl_filter macro and the
+ * pxl_filter_single function.
+ */
+int pxl_filter_single_image(pngz* z, image_filter_func f) {
+  return pxl_filter_single(z, *(void**)&f, IMAGE);
+}
+
+/**
+ * pixel filter
+ * single threaded.
+ * maps a function onto every pixel, this function may freely accept
+ * filter types, supported by the pxl_filter generic macro.
  * errors if pngz isn't loaded
  *
  * @param z pngz* simple png to filter
  * @param filter void(*)(unsigned char*), a filter function that take pixel ptr
  * @return exit code
  */
-int pxl_filter(pngz* z, pixel(*filter)(pixel)) {
-  if (!z->pixels) {
-    fprintf(stderr, "ERROR > filtering failed due to no loaded image.\n");
-    errno = EPERM;
-    return 1;
-  }
-  /* make an intermediary and copy to new pixel buffer */
+int pxl_filter_single(pngz* z, void* filter, filter_type ft) {
+    /* make an intermediary and copy to new pixel buffer */
   pixel** output = pngz_alloc_pixels(z->rows, z->cols);
+  // filter;
   for (unsigned row = 0; row < z->rows; row++) {
     for (unsigned col = 0; col < z->cols; col++) {
-      output[row][col] = filter(z->pixels[row][col]);
+      if (ft == PIXEL)
+        output[row][col] = (*(pixel_filter_func*)&filter)(z->pixels[row][col]);
+      else
+        output[row][col] = (*(image_filter_func*)&filter)(z, row, col);
     }
   }
   pngz_free_pixels(z->pixels, z->rows);
   z->pixels = output;
   return 0;
 }
+
 
 /* multithreaded filtering *--------------------------------------------------*/
 pthread_barrier_t thread_barrier;
@@ -53,14 +77,23 @@ void* pxl_filter_threadfn(void* params) {
   for (unsigned i = tp->row_start; i < tp->row_stop; i++) {
     for (unsigned j = 0; j < tp->i_image->width; j++) {
       if (tp->f_type == PIXEL)
-      tp->o_buf[i][j] = tp->filter_function_pixel(tp->i_image->pixels[i][j]);
+        tp->o_buf[i][j] = (*(pixel_filter_func*)&(tp->filter_function))(tp->i_image->pixels[i][j]);
       else
-      tp->o_buf[i][j] = tp->filter_function_image(tp->i_image, i, j);
+        tp->o_buf[i][j] = (*(image_filter_func*)&(tp->filter_function))(tp->i_image, i, j);
     }
   }
   /* halt threads */
   pthread_barrier_wait(&thread_barrier);
   return NULL;
+}
+
+
+void pxl_filter_threaded_pixel(pngz* z, pixel_filter_func f, unsigned tc) {
+  pxl_filter_thread_dispatcher(z, *(void**)&f, tc, PIXEL);
+}
+
+void pxl_filter_threaded_image(pngz* z, image_filter_func f, unsigned tc) {
+  pxl_filter_thread_dispatcher(z, *(void**)&f, tc, IMAGE);
 }
 
 /**
@@ -70,7 +103,7 @@ void* pxl_filter_threadfn(void* params) {
  * @param filter some filter function taking and returning a pixel
  * @return exit code, setting errno on failure
  */
-int pxl_filter_threaded(pngz* z, pixel (*filter)(pixel), unsigned thread_count) {
+int pxl_filter_thread_dispatcher(pngz* z, void* filter, unsigned thread_count, filter_type ft) {
 
   /* make an empty pixel buffer */
   pixel** output = pngz_alloc_pixels(z->rows, z->cols);
@@ -83,7 +116,7 @@ int pxl_filter_threaded(pngz* z, pixel (*filter)(pixel), unsigned thread_count) 
   pthread_barrier_init(&thread_barrier, NULL, thread_count);
 
   /* calc how much to do */
-  unsigned divisions = z->height / thread_count;
+  unsigned divisions = (z->height / thread_count) + 1;
 
   /* launch threads */
   for (unsigned i = 0; i < thread_count; i++) {
@@ -91,7 +124,8 @@ int pxl_filter_threaded(pngz* z, pixel (*filter)(pixel), unsigned thread_count) 
     tps[i] = (pxl_thread_parameters) {
       .i_image = z,
       .o_buf = output,
-      .filter_function_pixel = filter,
+      .f_type = ft,
+      .filter_function = filter,
       .row_start = i * divisions,
       .row_stop = (i + 1) * divisions > z->height ? z->height : (i+1) * divisions,
       .thread_id = i

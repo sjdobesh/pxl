@@ -46,16 +46,17 @@ $(TEST): $(SRC_OBJ) $(TEST_OBJ)
 	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 $(STATIC_LIB): $(SHARED_LIB)
-	ar -rs $@ $<
+	ar -rs $@ $^
 
 $(SHARED_LIB): $(SRC_OBJ)
-	$(CC) $(LIBFLAGS) $< -o $@
+	$(CC) $(LIBFLAGS) $^ -o $@
 
-$(SRC_OBJ): $(SRC)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@ $(LDLIBS)
+# $(SRC_OBJ): $(SRC)
+obj/%.o: src/%.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -g -c $^ -o $@ $(LDLIBS)
 
 $(TEST_OBJ): $(TEST_SRC)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -I$(SRC_DIR) $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -g -c -I$(SRC_DIR) $< -o $@
 
 # clean all temporary directories
 clean:
