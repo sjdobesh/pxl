@@ -46,7 +46,7 @@ int pxl_filter_single_image(pngz* z, image_filter_func f) {
 int pxl_filter_single(pngz* z, void* filter, filter_type ft) {
     /* make an intermediary and copy to new pixel buffer */
   pixel** output = pngz_alloc_pixels(z->rows, z->cols);
-  // filter;
+  /* filter; */
   for (unsigned row = 0; row < z->rows; row++) {
     for (unsigned col = 0; col < z->cols; col++) {
       if (ft == PIXEL)

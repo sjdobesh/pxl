@@ -1,5 +1,6 @@
 #include "../src/sort.h"
 #include "../src/filter.h"
+#include "../src/resize.h"
 #include "pngz.h"
 
 pixel filter_foo(pixel p) {
@@ -43,7 +44,26 @@ void sort_test() {
   pngz_free(&z);
 }
 
+void resize_test() {
+  pngz z;
+  pngz_load_from(&z, "png/Catgun.png");
+  pxl_resize(&z, 100, 100);
+  pngz_save_as(z, "png/RESIZETEST.png");
+  pngz_free(&z);
+}
+
+void crop_test() {
+  pngz z;
+  pngz_load_from(&z, "png/Catgun.png");
+  pngz_save_as(z, "png/CROPTEST.png");
+  pngz_free(&z);
+}
+
 int main() {
+  printf("filter test\n");
   filter_test();
+  printf("sort test\n");
   sort_test();
+  printf("resize test\n");
+  resize_test();
 }
