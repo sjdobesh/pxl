@@ -108,3 +108,74 @@ void orthogonal_sort(sort_info si) {
   free(row);
   return;
 }
+
+
+void fuck_sort(sort_info si) {
+
+  pixel* row;
+  int rows, row_size;
+
+  /* determine sort direction */
+  if (si.vertical_sort) {
+    rows = si.img_ref->width;
+    row_size = si.img_ref->height;
+    row = malloc(si.img_ref->height * sizeof(pixel));
+  } else {
+    rows = si.img_ref->height;
+    row_size = si.img_ref->width;
+    row = malloc(si.img_ref->width * sizeof(pixel));
+  }
+
+  /* process each row */
+  for (int i = 0; i < rows; i++) {
+    /* collect a horizontal row */
+    for (int j = 0; j < row_size; j++)
+      row[j] = si.vertical_sort
+        ? si.img_ref->pixels[j][i]
+        : si.img_ref->pixels[i][j];
+
+    /* iteratively sort subsections using threshold */
+    int start = 0;
+    int count = 0;
+    for (int j = 0; j < row_size; j++) {
+      if (start)
+        count++;
+
+      if (
+        !start
+        && j < row_size - 1
+        && !(rand() % si.random_start)
+        && threshold_difference(row[j], row[j+1], si.start_threshold)
+      ) {
+        start = j;
+      }
+
+      if (
+        ( /* must terminate */
+          start
+          && (
+            j == row_size - 1
+            || (count >= si.max_length)
+          )
+        ) || ( /* chance terminate */
+          start
+          && count > si.min_length
+          && (
+            (!(rand() % si.random_stop))
+            || threshold_difference(row[j], row[j+1], si.stop_threshold)
+          )
+        )
+      ) {
+        sort(&row[start], count, si.comparison_function);
+        start = 0; count = 0;
+      }
+    }
+
+    /* replace */
+    for (int j = 0; j < row_size; j++)
+      si.img_ref->pixels[si.vertical_sort?j:i][si.vertical_sort?i:j] = row[j];
+
+  }
+  free(row);
+  return;
+}

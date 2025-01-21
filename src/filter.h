@@ -70,6 +70,8 @@ int pxl_filter_thread_dispatcher(pngz* z, void* filter, unsigned thread_count, f
 int pxl_filter_single_pixel(pngz* z, pixel(*filter)(pixel));
 int pxl_filter_single_image(pngz* z, pixel(*filter)(pngz*, unsigned, unsigned));
 int pxl_filter_single(pngz* z, void* f, filter_type frt);
+void pxl_filter_threaded_pixel(pngz* z, pixel_filter_func f, unsigned tc);
+void pxl_filter_threaded_image(pngz* z, image_filter_func f, unsigned tc);
 
 /* resizing functions */
 // void* pxl_resize_threadfn(void* params);

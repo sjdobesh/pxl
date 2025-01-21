@@ -26,7 +26,7 @@ int pxl_resize(pngz* z, unsigned rows, unsigned cols){
 
   for (unsigned row = 0; row < rows; row++)
     for (unsigned col = 0; col < cols; col++)
-      //output[row][col] = z->pixels[umap(0, z->rows, 0, rows, row)][umap(0, z->cols, 0, cols, col)];
+      output[row][col] = z->pixels[umap(0, z->rows, 0, rows, row)][umap(0, z->cols, 0, cols, col)];
       // [0, x] - [0, y] = (y / x) * t
 
   pngz_free_pixels(z->pixels, z->rows);
@@ -47,11 +47,13 @@ int pxl_resize(pngz* z, unsigned rows, unsigned cols){
  * @return error code
  */
 int pxl_crop(pngz* z, unsigned rows, unsigned cols, unsigned row_start, unsigned col_start){
+
   pixel** output = pngz_alloc_pixels(rows, cols);
 
   for (unsigned row = row_start; row < rows; row++)
     for (unsigned col = col_start; col < cols; col++)
-      output[row][col] = z->pixels[row][col];
+      if (row < z->rows && col < z->cols) /* guard rail */
+        output[row][col] = z->pixels[row][col];
 
   pngz_free_pixels(z->pixels, z->rows);
   z->pixels = output;

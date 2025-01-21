@@ -24,4 +24,7 @@ void sort(pixel* p, int length, int (*compare)(const void*, const void*));
 /* vert horiz sort */
 void orthogonal_sort(sort_info);
 
+/* vert horiz sort */
+void fuck_sort(sort_info);
+
 #endif /* _PIX_H_ */
