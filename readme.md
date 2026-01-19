@@ -1,10 +1,10 @@
 # **sdl_win**
 
-simpled SDL2 context for rendering a single surface.
+simpled SDL3 context for rendering a single surface.
 easily open and view data live from pngz edits 
 
 ## dependencies
 
-SDL2
+SDL3
 
-`sudo apt install libsdl2-2.0-0 libsdl2-dev libsdl2-image-dev`
+`sudo apt install libsdl3-dev libsdl3-image-dev libsdl3-ttf-dev`

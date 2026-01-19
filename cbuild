@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 rm -rf build
 cmake -S . -B build -Wno-dev
+cp ./build/compile_commands.json ./
 cd build
 make
 cd ..
