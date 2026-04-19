@@ -21,6 +21,7 @@ file(GLOB sources
 
 # compile
 add_executable(sdl_pxl ${sources})
+target_compile_options(sdl_pxl PRIVATE -g -Wall -Wextra)
 target_link_libraries(
   sdl_pxl
   PRIVATE
