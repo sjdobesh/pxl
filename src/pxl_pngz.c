@@ -10,7 +10,8 @@
  * key functions:
  *
  *   - pixel SDL_get_pngz_pixel(SDL_Surface* surface, int x, int y);
- *   - void SDL_set_pngz_pixel(SDL_Surface* surface, int x, int y, PNGZ_Pixel p);
+ *   - void SDL_set_pngz_pixel(SDL_Surface* surface, int x, int y, PNGZ_Pixel
+ * p);
  *   - void pngz_to_surface(pngz* z, SDL_Surface* surface);
  *   - void surface_to_pngz(SDL_Surface* surface, pngz* z);
  *
@@ -29,26 +30,26 @@
  * @return raw pixel data as unsigned int
  */
 Uint32 PXL_GetPixelData(SDL_Surface *surface, int x, int y) {
-    unsigned bpp = SDL_BYTESPERPIXEL(surface->format);
-    Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
-    if (bpp > 4 || bpp < 1) {
-      fprintf(stderr, "ERROR > reading bytes per pixel\n");
-      return 0;
-    }
-    switch (bpp) {
-      case 1:
-        return *p;
-      case 2:
-        return *(Uint16 *)p;
-      case 3: /* <- pngz */
-        if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
-          return p[0] << 16 | p[1] << 8 | p[2];
-        else
-          return p[0] | p[1] << 8 | p[2] << 16;
-      case 4:
-        return *(Uint32 *)p;
-    }
-    return 0; /* shouldn't reach hear, this is an error */
+  unsigned bpp = SDL_BYTESPERPIXEL(surface->format);
+  Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
+  if (bpp > 4 || bpp < 1) {
+    fprintf(stderr, "ERROR > reading bytes per pixel\n");
+    return 0;
+  }
+  switch (bpp) {
+  case 1:
+    return *p;
+  case 2:
+    return *(Uint16 *)p;
+  case 3: /* <- pngz */
+    if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
+      return p[0] << 16 | p[1] << 8 | p[2];
+    else
+      return p[0] | p[1] << 8 | p[2] << 16;
+  case 4:
+    return *(Uint32 *)p;
+  }
+  return 0; /* shouldn't reach hear, this is an error */
 }
 
 /**
@@ -62,35 +63,35 @@ Uint32 PXL_GetPixelData(SDL_Surface *surface, int x, int y) {
  * @return exit code
  */
 int PXL_SetPixelData(SDL_Surface *surface, int x, int y, Uint32 pixel_data) {
-    unsigned bpp = SDL_BYTESPERPIXEL(surface->format);
-    Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
-    if (bpp > 4 || bpp < 1) {
-      fprintf(stderr, "ERROR > reading bytes per pixel\n");
-      return 1;
+  unsigned bpp = SDL_BYTESPERPIXEL(surface->format);
+  Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
+  if (bpp > 4 || bpp < 1) {
+    fprintf(stderr, "ERROR > reading bytes per pixel\n");
+    return 1;
+  }
+  switch (bpp) {
+  case 1:
+    *p = pixel_data;
+    break;
+  case 2:
+    *(Uint16 *)p = pixel_data;
+    break;
+  case 3: /* <- pngz */
+    if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
+      p[0] = (pixel_data >> 24) & 0xFF;
+      p[1] = (pixel_data >> 16) & 0xFF;
+      p[2] = (pixel_data >> 8) & 0xFF;
+    } else {
+      p[0] = pixel_data & 0xFF;
+      p[1] = (pixel_data >> 8) & 0xFF;
+      p[2] = (pixel_data >> 16) & 0xFF;
     }
-    switch (bpp) {
-      case 1:
-        *p = pixel_data;
-        break;
-      case 2:
-        *(Uint16 *)p = pixel_data;
-        break;
-      case 3: /* <- pngz */
-        if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
-          p[0] = (pixel_data >> 24) & 0xFF;
-          p[1] = (pixel_data >> 16) & 0xFF;
-          p[2] = (pixel_data >> 8) & 0xFF;
-        } else {
-          p[0] = pixel_data & 0xFF;
-          p[1] = (pixel_data >> 8) & 0xFF;
-          p[2] = (pixel_data >> 16) & 0xFF;
-        }
-        break;
-      case 4:
-        *(Uint32 *)p = pixel_data;
-        break;
-    }
-    return 0;
+    break;
+  case 4:
+    *(Uint32 *)p = pixel_data;
+    break;
+  }
+  return 0;
 }
 
 /**
@@ -105,9 +106,11 @@ int PXL_SetPixelData(SDL_Surface *surface, int x, int y, Uint32 pixel_data) {
  * @param a ptr to alpha channel (0-255)
  * @return exit code, result through reference
  */
-int PXL_GetPixelRGBA(SDL_Surface *surface, int x, int y, Uint8 *r, Uint8 *g, Uint8 *b, Uint8 *a) {
+int PXL_GetPixelRGBA(SDL_Surface *surface, int x, int y, Uint8 *r, Uint8 *g,
+                     Uint8 *b, Uint8 *a) {
   Uint32 pixel_data = PXL_GetPixelData(surface, x, y);
-  SDL_GetRGBA(pixel_data, SDL_GetPixelFormatDetails(surface->format), NULL, r, g, b, a);
+  SDL_GetRGBA(pixel_data, SDL_GetPixelFormatDetails(surface->format), NULL, r,
+              g, b, a);
   return 0;
 }
 
@@ -123,8 +126,10 @@ int PXL_GetPixelRGBA(SDL_Surface *surface, int x, int y, Uint8 *r, Uint8 *g, Uin
  * @param a ptr to alpha channel (0-255)
  * @return exit code, result through reference
  */
-int PXL_SetPixelRGBA(SDL_Surface *surface, int x, int y, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
-  Uint32 pixel_data = SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), NULL, r, g, b, a);
+int PXL_SetPixelRGBA(SDL_Surface *surface, int x, int y, Uint8 r, Uint8 g,
+                     Uint8 b, Uint8 a) {
+  Uint32 pixel_data =
+      SDL_MapRGBA(SDL_GetPixelFormatDetails(surface->format), NULL, r, g, b, a);
   return PXL_SetPixelData(surface, x, y, pixel_data);
 }
 
@@ -154,22 +159,25 @@ int PXL_SetPngzPixel(SDL_Surface *surface, int x, int y, PNGZ_Pixel p) {
   return PXL_SetPixelRGBA(surface, x, y, p.r, p.g, p.b, p.a);
 }
 
-
 /**
  * pack all pixels from a surface and pngz.
  * must match size
+ *
+ * *note*: pngz use unsigned size, sdl surfaces use signed ints to support
+ * some more image formats that are defined from bottom corner up instead of
+ * top left down
  *
  * @param surface
  * @param pngz
  * @return exit code
  */
 int PXL_SurfaceToPngz(SDL_Surface *surface, PNGZ_Image *z) {
-  if (z->height != surface->h || z->width != surface->w) {
+  if ((int)z->height != surface->h || (int)z->width != surface->w) {
     fprintf(stderr, "ERROR > surface to pngz\n");
     return 1;
   }
-  for (int i = 0; i < z->height; i++) {
-    for (int j = 0; j < z->width; j++) {
+  for (int i = 0; i < (int)z->height; i++) {
+    for (int j = 0; j < (int)z->width; j++) {
       z->pixels[i][j] = PXL_GetPngzPixel(surface, j, i);
     }
   }
@@ -185,12 +193,12 @@ int PXL_SurfaceToPngz(SDL_Surface *surface, PNGZ_Image *z) {
  * @return exit code
  */
 int PXL_PngzToSurface(PNGZ_Image z, SDL_Surface *surface) {
-  if (z.height != surface->h || z.width != surface->w) {
+  if ((int)z.height != surface->h || (int)z.width != surface->w) {
     fprintf(stderr, "ERROR > pngz to surface\n");
     return 1;
   }
-  for (int i = 0; i < z.height; i++) {
-    for (int j = 0; j < z.width; j++) {
+  for (int i = 0; i < (int)z.height; i++) {
+    for (int j = 0; j < (int)z.width; j++) {
       if (PXL_SetPngzPixel(surface, j, i, z.pixels[i][j])) {
         return 1;
       }

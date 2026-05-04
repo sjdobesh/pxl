@@ -12,9 +12,10 @@
  * - <SDL3_ttf/SDL_ttf.h>
  */
 #include "pxl_context.h"
+#include <SDL3/SDL_video.h>
 
 /* all defined as extern in sdl_context.h */
-const char *MENU_FORMAT[] = {"min length [%d] ",
+const char* MENU_FORMAT[] = {"min length [%d] ",
                              "max length [%d] ",
                              "random start [%d] ",
                              "random stop  [%d] ",
@@ -63,16 +64,18 @@ int PXL_InitSDLLibs() {
  * - /c context->renderer: initializes renderer with SDL_BLENDMODE_NONE
  * @return exit code (0 on success, 1 on error)
  */
-int PXL_CreateWindowRenderer(PXL_Context *context) {
+int PXL_CreateWindowRenderer(PXL_Context* context) {
   /* create window and renderer */
-  if (!(SDL_CreateWindowAndRenderer("pxl", SCREEN_WIDTH, SCREEN_HEIGHT,
-                                    SDL_WINDOW_HIGH_PIXEL_DENSITY,
-                                    &(context->win), &(context->renderer)))) {
+  if (!(SDL_CreateWindowAndRenderer(
+          "pxl", SCREEN_WIDTH, SCREEN_HEIGHT,
+          SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY, &(context->win),
+          &(context->renderer)))) {
     fprintf(stderr, "ERROR > creating window renderer.\n%s\n", SDL_GetError());
     return 1;
   }
   /* default blending options will be available in SDL 3.4 (apt has 3.2) */
   SDL_SetRenderDrawBlendMode(context->renderer, SDL_BLENDMODE_NONE);
+  SDL_SetWindowResizable(context->win, true);
   return 0;
 }
 
@@ -85,7 +88,7 @@ int PXL_CreateWindowRenderer(PXL_Context *context) {
  * - \c context->text_engine: set to surface text engine
  * @return exit code (0 on success, 1 on error)
  */
-int PXL_CreateFontEngine(PXL_Context *context) {
+int PXL_CreateFontEngine(PXL_Context* context) {
   if (!(context->default_font =
             TTF_OpenFont("fonts/BigBlue_TerminalPlus.TTF", FONT_SIZE))) {
     fprintf(stderr, "ERROR > couldn't find default font.\n");
@@ -109,8 +112,7 @@ int PXL_CreateFontEngine(PXL_Context *context) {
  * @param[out] context ptr to PXL context variables and state to init
  * @return exit code (0 on success, 1 on error)
  */
-int PXL_CreateSDLResources(PXL_Context *context) {
-
+int PXL_CreateSDLResources(PXL_Context* context) {
   if (PXL_InitSDLLibs())
     return 1;
 
@@ -132,7 +134,7 @@ int PXL_CreateSDLResources(PXL_Context *context) {
  * @param h height
  * @return exit code (0 on success, 1 on error)
  */
-int PXL_Create8BitSurface(SDL_Surface **surface, int w, int h) {
+int PXL_Create8BitSurface(SDL_Surface** surface, int w, int h) {
   if (!(*surface = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_XRGB8888))) {
     fprintf(stderr, "ERROR > creating 8bit surface.\n%s\n", SDL_GetError());
     return 1;
@@ -149,7 +151,7 @@ int PXL_Create8BitSurface(SDL_Surface **surface, int w, int h) {
  * @param path img file on disk
  * @return exit code (0 on success, 1 on error)
  */
-int PXL_CreateSurfaceFromImg(SDL_Surface **surface, const char *path) {
+int PXL_CreateSurfaceFromImg(SDL_Surface** surface, const char* path) {
   if (!(*surface = IMG_Load(path))) {
     fprintf(stderr, "ERROR > loading %s to screen surface .\n%s\n", path,
             SDL_GetError());
@@ -167,8 +169,9 @@ int PXL_CreateSurfaceFromImg(SDL_Surface **surface, const char *path) {
  * @param texture[out] ptr to texture created from surface
  * @return exit code (0 on success, 1 on error)
  */
-int PXL_CreateTextureFromSurface(SDL_Renderer *renderer, SDL_Surface *surface,
-                                 SDL_Texture **texture) {
+int PXL_CreateTextureFromSurface(SDL_Renderer* renderer,
+                                 SDL_Surface* surface,
+                                 SDL_Texture** texture) {
   if (!(*texture = SDL_CreateTexture(renderer, surface->format,
                                      SDL_TEXTUREACCESS_STREAMING, surface->w,
                                      surface->h))) {
@@ -193,8 +196,7 @@ int PXL_CreateTextureFromSurface(SDL_Renderer *renderer, SDL_Surface *surface,
  * - /c context->screen_texture: initialized to match surface format
  * @return exit code (0 on success, 1 on error)
  */
-int PXL_CreateScreen(PXL_Context *context) {
-
+int PXL_CreateScreen(PXL_Context* context) {
   if (PXL_CreateSurfaceFromImg(&(context->screen_surface), context->path))
     return 1;
 
@@ -208,7 +210,7 @@ int PXL_CreateScreen(PXL_Context *context) {
 /**
  * create menu text objects for a specific index
  */
-int PXL_CreateMenuTextItem(PXL_Context *context, int menu_index) {
+int PXL_CreateMenuTextItem(PXL_Context* context, int menu_index) {
   if (!(context->text[menu_index] =
             TTF_CreateText(context->text_engine, context->default_font,
                            MENU[menu_index], sizeof(MENU[menu_index])))) {
@@ -228,7 +230,7 @@ int PXL_CreateMenuTextItem(PXL_Context *context, int menu_index) {
  * modifies:
  * - /c context->text: text object array
  */
-int PXL_CreateMenuText(PXL_Context *context) {
+int PXL_CreateMenuText(PXL_Context* context) {
   int exit = 0;
   for (int i = 0; i < MENU_LENGTH; i++)
     if (PXL_CreateMenuTextItem(context, i))
@@ -241,8 +243,7 @@ int PXL_CreateMenuText(PXL_Context *context) {
  * make a surface object from screen to store
  * text seperate but not alpha.
  */
-int PXL_CreateMenu(PXL_Context *context) {
-
+int PXL_CreateMenu(PXL_Context* context) {
   if (PXL_Create8BitSurface(&(context->text_surface),
                             context->screen_surface->w,
                             context->screen_surface->h))
@@ -258,8 +259,7 @@ int PXL_CreateMenu(PXL_Context *context) {
   return 0;
 }
 
-int PXL_CreateContextResources(PXL_Context *context) {
-
+int PXL_CreateContextResources(PXL_Context* context) {
   if (PXL_CreateScreen(context))
     return 1;
   else {
@@ -281,8 +281,7 @@ int PXL_CreateContextResources(PXL_Context *context) {
  * load bare minimum for sdl (a window and renderer)
  * then make the rest of the context resources (textures, surfaces, text)
  */
-int PXL_Init(PXL_Context *context) {
-
+int PXL_Init(PXL_Context* context) {
   if (PXL_CreateSDLResources(context))
     return 1;
 
@@ -299,7 +298,7 @@ int PXL_Init(PXL_Context *context) {
  * - reads in all contents into global MENU array
  * @return exit code (0 on success, 1 on error)
  */
-int PXL_UpdateMenuValues(PXL_SortInfo *si) {
+int PXL_UpdateMenuValues(PXL_SortInfo* si) {
   memset(MENU, 0, sizeof(MENU));
   snprintf(MENU[0], sizeof(MENU[0]), MENU_FORMAT[0], si->min_length);
   snprintf(MENU[1], sizeof(MENU[1]), MENU_FORMAT[1], si->max_length);
@@ -311,7 +310,7 @@ int PXL_UpdateMenuValues(PXL_SortInfo *si) {
   return 0;
 }
 
-int PXL_UpdateTextureFromSurface(SDL_Surface *surface, SDL_Texture **texture) {
+int PXL_UpdateTextureFromSurface(SDL_Surface* surface, SDL_Texture** texture) {
   /* update pixel values */
   if (!SDL_UpdateTexture(*texture, NULL, surface->pixels, surface->pitch)) {
     fprintf(stderr, "ERROR > updating texture.\n%s\n", SDL_GetError());
@@ -327,7 +326,7 @@ int PXL_UpdateTextureFromSurface(SDL_Surface *surface, SDL_Texture **texture) {
  * @param context with texture and surface components
  * @return exit code
  */
-int PXL_UpdateScreenTexture(PXL_Context *context) {
+int PXL_UpdateScreenTexture(PXL_Context* context) {
   return PXL_UpdateTextureFromSurface(context->screen_surface,
                                       &(context->screen_texture));
 }
@@ -338,7 +337,7 @@ int PXL_UpdateScreenTexture(PXL_Context *context) {
  * @param context with text texture and surface components
  * @return exit code
  */
-int PXL_UpdateMenuTextItem(PXL_Context *context, int menu_index) {
+int PXL_UpdateMenuTextItem(PXL_Context* context, int menu_index) {
   /* regenerate text object i*/
   TTF_DestroyText(context->text[menu_index]);
   if (!(context->text[menu_index] =
@@ -349,7 +348,7 @@ int PXL_UpdateMenuTextItem(PXL_Context *context, int menu_index) {
   return 0;
 }
 
-int PXL_UpdateMenuText(PXL_Context *context) {
+int PXL_UpdateMenuText(PXL_Context* context) {
   int exit = 0;
   /* update values and rerender */
   PXL_UpdateMenuValues(context->sort_info);
@@ -359,7 +358,7 @@ int PXL_UpdateMenuText(PXL_Context *context) {
   return exit;
 }
 
-int PXL_UpdateMenuSurface(PXL_Context *context) {
+int PXL_UpdateMenuSurface(PXL_Context* context) {
   SDL_ClearSurface(context->text_surface, 0, 0, 0, 0xFF);
   PXL_UpdateMenuText(context);
   for (int i = 0; i < MENU_LENGTH; i++) {
@@ -374,7 +373,7 @@ int PXL_UpdateMenuSurface(PXL_Context *context) {
   return 0;
 }
 
-int PXL_UpdateMenuTexture(PXL_Context *context) {
+int PXL_UpdateMenuTexture(PXL_Context* context) {
   PXL_UpdateMenuSurface(context);
   PXL_UpdateTextureFromSurface(context->text_surface,
                                &(context->screen_texture));
@@ -388,8 +387,7 @@ int PXL_UpdateMenuTexture(PXL_Context *context) {
  * @param context with texture and surface components
  * @return exit code
  */
-int PXL_Update(PXL_Context *context) {
-
+int PXL_Update(PXL_Context* context) {
   /* skip if no flags set */
   if (!(context->update))
     return 0;
@@ -414,32 +412,60 @@ int PXL_Update(PXL_Context *context) {
 }
 
 /** handles highspeed continuous keyboard input */
-int PXL_HandleKeyboardState(PXL_Context *context) {
-  if (context->kbstate[SDL_SCANCODE_J]) {
-    switch (context->menu_selection) {
-    case 0:
-      context->sort_info->min_length++;
-      break;
-    case 1:
-      context->sort_info->max_length++;
-      break;
-    }
-    context->update |= SCREEN_UPDATE | MENU_UPDATE;
-    context->render = 1;
-    return SDL_APP_CONTINUE;
-  }
+int PXL_HandleKeyboardState(PXL_Context* context) {
   if (context->kbstate[SDL_SCANCODE_K]) {
     switch (context->menu_selection) {
-    case 0:
-      context->sort_info->min_length--;
-      break;
-    case 1:
-      context->sort_info->max_length--;
-      break;
+      case 0:
+        context->sort_info->min_length++;
+        break;
+      case 1:
+        context->sort_info->max_length++;
+        break;
+      case 2:
+        context->sort_info->random_start++;
+        break;
+      case 3:
+        context->sort_info->random_stop++;
+        break;
+      case 4:
+        context->sort_info->start_threshold += 0.001;
+        break;
+      case 5:
+        context->sort_info->stop_threshold += 0.001;
+        break;
+      case 6:
+        context->sort_info->vertical_sort = !context->sort_info->vertical_sort;
+        break;
     }
     context->update |= SCREEN_UPDATE | MENU_UPDATE;
     context->render = 1;
-    return SDL_APP_CONTINUE;
+  }
+  if (context->kbstate[SDL_SCANCODE_J]) {
+    switch (context->menu_selection) {
+      case 0:
+        context->sort_info->min_length--;
+        break;
+      case 1:
+        context->sort_info->max_length--;
+        break;
+      case 2:
+        context->sort_info->random_start--;
+        break;
+      case 3:
+        context->sort_info->random_stop--;
+        break;
+      case 4:
+        context->sort_info->start_threshold -= 0.001;
+        break;
+      case 5:
+        context->sort_info->stop_threshold -= 0.001;
+        break;
+      case 6:
+        context->sort_info->vertical_sort = !context->sort_info->vertical_sort;
+        break;
+    }
+    context->update |= SCREEN_UPDATE | MENU_UPDATE;
+    context->render = 1;
   }
   if (context->kbstate[SDL_SCANCODE_Q]) {
     return SDL_APP_SUCCESS;
@@ -450,7 +476,7 @@ int PXL_HandleKeyboardState(PXL_Context *context) {
 /**
  * handles inputs to adjust sort info
  */
-int PXL_HandleEvents(PXL_Context *context, SDL_Event *event) {
+int PXL_HandleEvents(PXL_Context* context, SDL_Event* event) {
   if (event->type == SDL_EVENT_QUIT)
     return SDL_APP_SUCCESS;
   context->kbstate = SDL_GetKeyboardState(NULL);
@@ -467,17 +493,20 @@ int PXL_HandleEvents(PXL_Context *context, SDL_Event *event) {
 /**
  * render text portion to screen
  */
-int PXL_RenderText(PXL_Context *context) {
-
+int PXL_RenderText(PXL_Context* context) {
   int w = 0, h = 0, offset = 0;
 
   /* clear text surface and texture*/
   SDL_ClearSurface(context->text_surface, 0, 0, 0, 0xFF);
 
   for (int i = 0; i < MENU_LENGTH; i++) {
-    TTF_DrawSurfaceText(context->text[i], offset, 0, context->text_surface);
+    TTF_DrawSurfaceText(context->text[i], offset, h, context->text_surface);
     TTF_GetTextSize(context->text[i], &w, &h);
     offset += w;
+    if (offset > SCREEN_WIDTH) {
+      offset %= SCREEN_WIDTH;
+      h += 100;
+    }
   }
 
   SDL_FRect src = {.w = SCREEN_WIDTH, .h = h};
@@ -489,7 +518,7 @@ int PXL_RenderText(PXL_Context *context) {
   return 0;
 }
 
-int PXL_RenderScreen(PXL_Context *context) {
+int PXL_RenderScreen(PXL_Context* context) {
   PXL_UpdateTextureFromSurface(context->screen_surface,
                                &(context->screen_texture));
   if (!SDL_RenderTexture(context->renderer, context->screen_texture, NULL,
@@ -501,8 +530,7 @@ int PXL_RenderScreen(PXL_Context *context) {
 /**
  * clear and refresh contexts renderer
  */
-int PXL_Render(PXL_Context *context) {
-
+int PXL_Render(PXL_Context* context) {
   /* skip if render flag not set */
   if (!(context->render))
     return 0;
@@ -515,14 +543,15 @@ int PXL_Render(PXL_Context *context) {
   if (!SDL_RenderPresent(context->renderer))
     return 1;
 
+  context->render = 0;
+
   return 0;
 }
 
 /**
  * free resources and quit
  */
-int PXL_Quit(PXL_Context *context) {
-
+int PXL_Quit(PXL_Context* context) {
   /* free screen stuff  */
   SDL_DestroySurface(context->screen_surface);
   SDL_DestroyTexture(context->screen_texture);
